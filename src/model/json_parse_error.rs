@@ -1,4 +1,9 @@
-use crate::models::JsonParseError;
+/// Represents an error encountered while parsing JSON.
+#[derive(Debug, Clone, PartialEq)]
+pub struct JsonParseError {
+    pub message: String,
+    pub position: usize,
+}
 
 impl JsonParseError {
     /// Creates a new JsonParseError.
@@ -15,6 +20,8 @@ impl JsonParseError {
     /// # Examples
     ///
     /// ```
+    /// use synson::model::json_parse_error::JsonParseError;
+    ///
     /// let err = JsonParseError::new("Unexpected token", 12);
     /// assert_eq!(err.message, "Unexpected token");
     /// ```

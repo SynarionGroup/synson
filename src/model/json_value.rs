@@ -11,9 +11,3 @@ pub enum JsonValue {
     Object(std::collections::HashMap<String, JsonValue>),
 }
 
-/// Represents an error encountered while parsing JSON.
-#[derive(Debug, Clone, PartialEq)]
-pub struct JsonParseError {
-    pub message: String,
-    pub position: usize,
-}
