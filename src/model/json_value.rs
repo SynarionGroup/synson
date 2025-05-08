@@ -10,4 +10,3 @@ pub enum JsonValue {
     Array(Vec<JsonValue>),
     Object(std::collections::HashMap<String, JsonValue>),
 }
-
