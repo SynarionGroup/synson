@@ -1,5 +1,6 @@
 use crate::model::JsonValue;
-use crate::parser::{parse_bool, parse_null, parse_number, parse_string};
+
+use super::parse_value;
 
 /// Attempts to parse a JSON array of simple values (null, bool, number, string).
 ///
@@ -68,11 +69,4 @@ pub fn parse_array(input: &str) -> Option<(JsonValue, &str)> {
             return None;
         }
     }
-}
-
-fn parse_value(input: &str) -> Option<(JsonValue, &str)> {
-    parse_null(input)
-        .or_else(|| parse_bool(input))
-        .or_else(|| parse_number(input))
-        .or_else(|| parse_string(input))
 }

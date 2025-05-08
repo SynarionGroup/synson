@@ -21,9 +21,9 @@ fn should_parse_simple_objects() {
 
 #[test]
 fn should_reject_invalid_objects() {
-    assert_eq!(parse_object("{a: 1}"), None); // key not quoted
-    assert_eq!(parse_object("{\"a\" 1}"), None); // missing colon
-    assert_eq!(parse_object("{\"a\": 1,}"), None); // trailing comma
-    assert_eq!(parse_object("{\"a\": 1 \"b\": 2}"), None); // missing comma
+    assert_eq!(parse_object("{a: 1}"), None);
+    assert_eq!(parse_object("{\"a\" 1}"), None);
+    assert_eq!(parse_object("{\"a\": 1,}"), None);
+    assert_eq!(parse_object("{\"a\": 1 \"b\": 2}"), None);
     assert_eq!(parse_object("not an object"), None);
 }
