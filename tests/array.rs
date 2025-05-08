@@ -19,8 +19,8 @@ fn should_parse_simple_arrays() {
 
 #[test]
 fn should_reject_malformed_arrays() {
-    assert_eq!(parse_array("[1, true,]"), None); // trailing comma
-    assert_eq!(parse_array("[1 true]"), None); // missing comma
-    assert_eq!(parse_array("[1, "), None); // unterminated
+    assert_eq!(parse_array("[1, true,]"), None);
+    assert_eq!(parse_array("[1 true]"), None);
+    assert_eq!(parse_array("[1, "), None);
     assert_eq!(parse_array("not an array"), None);
 }
