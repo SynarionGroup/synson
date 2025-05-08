@@ -1,4 +1,5 @@
-pub mod json_parse_error;
-pub mod models;
+pub mod model;
+pub mod parser;
 
-pub use crate::models::{JsonParseError, JsonValue};
+pub use model::{JsonParseError, JsonValue};
+pub use parser::parse_null;
