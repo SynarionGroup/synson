@@ -1,7 +1,5 @@
 # Changelog
 
-## [v0.2.0] - 2025-05-09
-
 ### ✨ Added
 
 - Extended test suite for recursive parsing of nested arrays and objects.
@@ -13,12 +11,17 @@
   - Incomplete decimals (`5.`, `.5`)
   - Incomplete exponents (`1e`, `1e+`, `1e-`)
   - Unexpected trailing characters (`3.14rest`, `12abc`)
+- Full support for JSON string escape sequences as per RFC 8259:
+  - `\\`, `\"`, `\/`, `\b`, `\f`, `\n`, `\r`, `\t`
+- Extended `parse_string` to decode all supported sequences and reject invalid ones.
 
 ### ✅ JSON support
 
 - Confirmed support for deeply nested JSON structures via recursive `parse_value`.
 - Arrays and objects can now contain any valid JSON value, including nested arrays/objects.
 - Added support for scientific notation in numbers (e.g. `1e3`, `-2.5E-2`) per RFC 8259.
+- String values now correctly handle all standard JSON escape sequences.
+- Unicode escape support (`\uXXXX`) is planned for a future version.
 
 ### 🧪 Test coverage
 
@@ -27,6 +30,7 @@
 - Clarified function behavior through test-driven validation of recursive parsing.
 - Added tests for valid and invalid exponential numbers.
 - Added edge cases for boundary values (`-0`, `0.0`, etc.).
+- Added unit tests for all supported string escape sequences (`\b`, `\f`, `\r`, `\/`, etc.).
 
 ## [v0.1.0] - 2025-05-08
 
