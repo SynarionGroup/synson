@@ -2,7 +2,7 @@ use crate::model::JsonValue;
 
 use super::parse_value;
 
-/// Attempts to parse a JSON array of simple values (null, bool, number, string).
+/// Attempts to parse a JSON array with potentially nested values.
 ///
 /// # Arguments
 ///
@@ -18,20 +18,19 @@ use super::parse_value;
 /// use synson::{parse_array, JsonValue};
 ///
 /// assert_eq!(
-///     parse_array("[1, true, \"ok\"]"),
+///     parse_array("[1, {\"a\": [true, false]}, 3]"),
 ///     Some((
 ///         JsonValue::Array(vec![
 ///             JsonValue::Number(1.0),
-///             JsonValue::Bool(true),
-///             JsonValue::String("ok".to_string())
+///             JsonValue::Object({
+///                 let mut map = std::collections::HashMap::new();
+///                 map.insert("a".to_string(), JsonValue::Array(vec![JsonValue::Bool(true), JsonValue::Bool(false)]));
+///                 map
+///             }),
+///             JsonValue::Number(3.0)
 ///         ]),
 ///         ""
 ///     ))
-/// );
-///
-/// assert_eq!(
-///     parse_array("[ ]"),
-///     Some((JsonValue::Array(vec![]), ""))
 /// );
 /// ```
 pub fn parse_array(input: &str) -> Option<(JsonValue, &str)> {
