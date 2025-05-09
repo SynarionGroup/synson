@@ -30,6 +30,22 @@ fn should_parse_escaped_strings() {
         parse_string("\"backslash: \\\\\""),
         Some((JsonValue::String("backslash: \\".to_string()), ""))
     );
+    assert_eq!(
+        parse_string("\"back\\bspace\""),
+        Some((JsonValue::String("back\u{0008}space".to_string()), ""))
+    );
+    assert_eq!(
+        parse_string("\"form\\ffeed\""),
+        Some((JsonValue::String("form\u{000C}feed".to_string()), ""))
+    );
+    assert_eq!(
+        parse_string("\"carriage\\rreturn\""),
+        Some((JsonValue::String("carriage\rreturn".to_string()), ""))
+    );
+    assert_eq!(
+        parse_string("\"escaped\\/slash\""),
+        Some((JsonValue::String("escaped/slash".to_string()), ""))
+    );
 }
 
 #[test]
