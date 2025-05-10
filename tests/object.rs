@@ -10,22 +10,22 @@ fn should_parse_simple_objects() {
 
     assert_eq!(
         parse_object("{\"a\": 1, \"b\": true, \"c\": \"ok\"}"),
-        Some((JsonValue::Object(expected), ""))
+        Ok((JsonValue::Object(expected), ""))
     );
 
     assert_eq!(
         parse_object("{ }"),
-        Some((JsonValue::Object(HashMap::new()), ""))
+        Ok((JsonValue::Object(HashMap::new()), ""))
     );
 }
 
 #[test]
 fn should_reject_invalid_objects() {
-    assert_eq!(parse_object("{a: 1}"), None);
-    assert_eq!(parse_object("{\"a\" 1}"), None);
-    assert_eq!(parse_object("{\"a\": 1,}"), None);
-    assert_eq!(parse_object("{\"a\": 1 \"b\": 2}"), None);
-    assert_eq!(parse_object("not an object"), None);
+    assert!(parse_object("{a: 1}").is_err());
+    assert!(parse_object("{\"a\" 1}").is_err());
+    assert!(parse_object("{\"a\": 1,}").is_err());
+    assert!(parse_object("{\"a\": 1 \"b\": 2}").is_err());
+    assert!(parse_object("not an object").is_err());
 }
 
 #[test]
@@ -45,7 +45,7 @@ fn should_parse_nested_objects_and_arrays() {
 
     assert_eq!(
         parse_object(r#"{"user": {"id": 1, "tags": ["rust", "json"]}}"#),
-        Some((JsonValue::Object(expected), ""))
+        Ok((JsonValue::Object(expected), ""))
     );
 }
 
@@ -65,6 +65,6 @@ fn should_parse_deeply_nested_objects() {
 
     assert_eq!(
         parse_object(r#"{"a": {"b": {"c": {"d": null}}}}"#),
-        Some((JsonValue::Object(a), ""))
+        Ok((JsonValue::Object(a), ""))
     );
 }

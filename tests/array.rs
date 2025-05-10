@@ -4,7 +4,7 @@ use synson::{parse_array, JsonValue};
 fn should_parse_simple_arrays() {
     assert_eq!(
         parse_array("[1, true, \"ok\"]"),
-        Some((
+        Ok((
             JsonValue::Array(vec![
                 JsonValue::Number(1.0),
                 JsonValue::Bool(true),
@@ -14,15 +14,15 @@ fn should_parse_simple_arrays() {
         ))
     );
 
-    assert_eq!(parse_array(" [ ] "), Some((JsonValue::Array(vec![]), " ")));
+    assert_eq!(parse_array(" [ ] "), Ok((JsonValue::Array(vec![]), " ")));
 }
 
 #[test]
 fn should_reject_malformed_arrays() {
-    assert_eq!(parse_array("[1, true,]"), None);
-    assert_eq!(parse_array("[1 true]"), None);
-    assert_eq!(parse_array("[1, "), None);
-    assert_eq!(parse_array("not an array"), None);
+    assert!(parse_array("[1, true,]").is_err());
+    assert!(parse_array("[1 true]").is_err());
+    assert!(parse_array("[1, ").is_err());
+    assert!(parse_array("not an array").is_err());
 }
 
 #[test]
@@ -32,7 +32,7 @@ fn should_parse_nested_arrays_and_objects() {
     let result = parse_array(r#"[1, {"a": [true, false]}, 3]"#);
     assert_eq!(
         result,
-        Some((
+        Ok((
             JsonValue::Array(vec![
                 JsonValue::Number(1.0),
                 JsonValue::Object({
@@ -52,7 +52,7 @@ fn should_parse_nested_arrays_and_objects() {
     let result = parse_array(r#"[{"x": 1}, {"x": {"y": [2, 3]}}]"#);
     assert_eq!(
         result,
-        Some((
+        Ok((
             JsonValue::Array(vec![
                 JsonValue::Object({
                     let mut m = HashMap::new();
