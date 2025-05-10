@@ -14,6 +14,15 @@
 - Full support for JSON string escape sequences as per RFC 8259:
   - `\\`, `\"`, `\/`, `\b`, `\f`, `\n`, `\r`, `\t`
 - Extended `parse_string` to decode all supported sequences and reject invalid ones.
+- Improved error handling for JSON parsing:
+  - Detailed error messages for parsing issues, including:
+    - Trailing characters** after a valid JSON value.
+    - Missing colons in object key-value pairs.
+    - Trailing commas in arrays before the closing bracket.
+    - Unterminated string literals and invalid escape sequences in strings.
+    - Invalid number exponents and leading zeros in numbers.
+- Enhanced error logging to include position information (line, column, index) for better debugging.
+- Custom error handling for malformed JSON objects, arrays, and strings.
 
 ### ✅ JSON support
 
@@ -22,6 +31,17 @@
 - Added support for scientific notation in numbers (e.g. `1e3`, `-2.5E-2`) per RFC 8259.
 - String values now correctly handle all standard JSON escape sequences.
 - Unicode escape support (`\uXXXX`) is planned for a future version.
+- Added strict validation for JSON syntax, rejecting invalid formats:
+  - Incomplete exponents (`1e`, `1e+`, `1e-`).
+  - Leading zeroes (`01`, `00`).
+  - Incomplete decimals (`5.`, `.5`).
+  - Invalid escape sequences in strings.
+  - Unexpected trailing characters after valid JSON values.
+- Error reporting now includes specific messages for:
+  - Missing colons in object entries.
+  - Trailing commas in arrays.
+  - Unterminated strings.
+  - Invalid characters in booleans (`trueX`, `falseY`).
 
 ### 🧪 Test coverage
 
@@ -31,6 +51,14 @@
 - Added tests for valid and invalid exponential numbers.
 - Added edge cases for boundary values (`-0`, `0.0`, etc.).
 - Added unit tests for all supported string escape sequences (`\b`, `\f`, `\r`, `\/`, etc.).
+- Test coverage improvements:
+  - Regression tests for common error cases like trailing characters, missing colons, and invalid escape sequences.
+  - Tests for leading zeroes and exponent errors in numbers.
+  - Comprehensive test cases for malformed JSON input and edge cases, including:
+    - Trailing characters after valid JSON values (`true false`).
+    - Missing colons in objects (`{"key" "value"}`).
+    - Invalid escape sequences in strings.
+- Fixed test cases for malformed JSON to ensure accurate error handling.
 
 ## [v0.1.0] - 2025-05-08
 
