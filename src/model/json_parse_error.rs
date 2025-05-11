@@ -1,3 +1,5 @@
+// src/model/json_parse_error.rs
+
 /// Represents an error encountered while parsing JSON.
 #[derive(Debug, PartialEq)]
 pub struct JsonParseError {
