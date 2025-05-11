@@ -4,34 +4,31 @@
 
 ### ✨ Added
 
-- **JsonParseOptions** is now optional in the `parse_json` function. If not provided, it defaults to strict mode.
-- Parser now supports **strict** and **tolerant** modes:
-  - **Strict mode**: Rejects trailing commas, malformed numbers, and extra characters after the JSON value.
-  - **Tolerant mode**: Allows trailing characters, making it more lenient with non-compliant JSON.
-- Improved error handling for malformed JSON:
-  - Trailing characters after valid JSON values are now detected and reported.
-  - Missing colons in object key-value pairs, trailing commas, unterminated strings, invalid escape sequences, and invalid number exponents are caught with detailed error messages.
-- Enhanced error logging with position information (line, column, index) to facilitate debugging.
+- **Recursive parsing of nested structures**: Deeply nested objects and arrays are now fully supported.
+- **Scientific notation support**: Numbers like `1e3`, `-2.5E-2`, `0.5e+2` are correctly parsed.
+- **Improved error handling**:
+  - More detailed error messages with position information (line, column, index).
+  - Support for trailing characters after valid JSON values is rejected with informative error messages.
+- **Flexible parsing modes**:
+  - Strict mode: Rejects trailing commas, malformed numbers, and unexpected characters.
+  - Tolerant mode: Allows trailing characters, making it more lenient for non-compliant JSON.
+- **JsonParseOptions is now optional**: If not provided, the parser defaults to strict mode.
 
 ### ✅ JSON support
 
-- Added support for deeply nested JSON structures via recursive `parse_value`.
-- Arrays and objects can now contain any valid JSON value, including nested arrays and objects.
-- **Scientific notation** in numbers is now supported (e.g., `1e3`, `-2.5E-2`).
-- Full support for JSON string escape sequences (e.g., `\\`, `\"`, `\b`, `\n`, `\r`, `\t`).
-- **Strict validation**: Rejects malformed JSON, including leading zeroes, incomplete exponents, and trailing commas in arrays or objects.
-- **Tolerant mode**: Allows trailing characters after JSON values, increasing flexibility.
+- Confirmed support for deeply nested JSON structures via recursive `parse_value`.
+- Arrays and objects can now contain any valid JSON value, including nested arrays/objects.
+- Enhanced support for scientific notation in numbers per RFC 8259.
+- Full support for standard JSON escape sequences in strings.
 
 ### 🧪 Test coverage
 
-- Expanded unit and integration tests to cover:
-  - Valid and invalid exponential numbers, edge cases, and malformed JSON.
-  - Trailing characters after valid JSON values (e.g., `"true false"` or `"{...} extra"`).
-  - Tests now reflect the ability to handle both **strict** and **tolerant** modes.
-- Comprehensive error handling tests to verify that:
-  - Missing colons, trailing commas, and unterminated strings trigger the correct errors.
-  - Leading zeros and invalid escape sequences are handled as expected.
-  
+- Added extensive tests for deeply nested JSON structures (objects and arrays).
+- Valid and invalid test cases for scientific notation in numbers.
+- Regression tests for trailing characters after valid JSON values (e.g., `true false`, `{"key": "value"} extra`).
+- Tests added for both strict and tolerant parsing modes.
+- Enhanced unit and integration tests covering all edge cases of malformed JSON input.
+
 ## [v0.1.0] - 2025-05-08
 
 ### ✨ Added
