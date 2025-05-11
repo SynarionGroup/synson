@@ -1,38 +1,84 @@
-use crate::model::JsonValue;
+use crate::model::{JsonParseError, JsonValue};
 
-/// Attempts to parse a JSON number (integers, floats and scientific notation).
+/// Parses a JSON number, including integers, decimals, and scientific notation (e.g. `1e3`, `-2.5E-2`).
+///
+/// The parser enforces strict JSON number formatting rules:
+/// - No leading zeros for integers (e.g. `01` is invalid)
+/// - A fractional part must have at least one digit (e.g. `5.` is invalid)
+/// - An exponent must have digits (e.g. `1e`, `1e+` are invalid)
 ///
 /// # Arguments
 ///
-/// * `input` - A string slice to parse.
+/// * `input` - A string slice expected to start with a valid JSON number.
 ///
 /// # Returns
 ///
-/// `Some((JsonValue::Number(value), remaining_input))` if successful, otherwise `None`.
-pub fn parse_number(input: &str) -> Option<(JsonValue, &str)> {
+/// * `Ok((JsonValue::Number(value), remaining_input))` if a valid number is parsed.
+/// * `Err(JsonParseError)` if the number is invalid or malformed.
+/// * `Err(JsonParseError::unmatched(...))` if the input is unrelated to a number.
+///
+/// # Examples
+///
+/// ```
+/// use synson::parser::parse_number;
+/// use synson::model::JsonValue;
+///
+/// assert_eq!(parse_number("42"), Ok((JsonValue::Number(42.0), "")));
+/// assert_eq!(parse_number("-3.14"), Ok((JsonValue::Number(-3.14), "")));
+/// assert_eq!(parse_number("1e2"), Ok((JsonValue::Number(100.0), "")));
+/// assert!(parse_number("01").is_err());
+/// assert!(parse_number("abc").is_err());
+/// ```
+pub fn parse_number(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     let input = input.trim_start();
     let mut chars = input.char_indices().peekable();
     let mut end_index = 0;
-    let mut has_digits = false;
+
+    let original = input;
 
     // Optional minus sign
     if let Some((_, '-')) = chars.peek() {
         chars.next();
     }
 
-    // Reject if leading with dot
+    // Reject leading dot
     if let Some((_, '.')) = chars.peek() {
-        return None;
+        return Err(JsonParseError::unmatched("number", input));
     }
 
     // Integer part
-    while let Some(&(i, c)) = chars.peek() {
-        if c.is_ascii_digit() {
-            has_digits = true;
+    let mut leading_zero = false;
+    if let Some(&(i, c)) = chars.peek() {
+        if c == '0' {
+            leading_zero = true;
             end_index = i + 1;
             chars.next();
+        } else if c.is_ascii_digit() {
+            while let Some(&(i, c)) = chars.peek() {
+                if c.is_ascii_digit() {
+                    end_index = i + 1;
+                    chars.next();
+                } else {
+                    break;
+                }
+            }
         } else {
-            break;
+            return Err(JsonParseError::unmatched("number", input));
+        }
+    } else {
+        return Err(JsonParseError::unmatched("number", input));
+    }
+
+    // Reject leading zeros like "01"
+    if leading_zero {
+        if let Some(&(_, c)) = chars.peek() {
+            if c.is_ascii_digit() {
+                return Err(JsonParseError::new(
+                    "Leading zeros are not allowed in numbers",
+                    end_index,
+                    original,
+                ));
+            }
         }
     }
 
@@ -43,7 +89,6 @@ pub fn parse_number(input: &str) -> Option<(JsonValue, &str)> {
         let mut has_frac_digits = false;
         while let Some(&(j, c)) = chars.peek() {
             if c.is_ascii_digit() {
-                has_digits = true;
                 has_frac_digits = true;
                 end_index = j + 1;
                 chars.next();
@@ -53,19 +98,18 @@ pub fn parse_number(input: &str) -> Option<(JsonValue, &str)> {
         }
 
         if !has_frac_digits {
-            return None;
+            return Err(JsonParseError::new(
+                "Expected digits after decimal point",
+                end_index,
+                original,
+            ));
         }
-    }
-
-    if !has_digits {
-        return None;
     }
 
     // Exponent part
     if let Some(&(_, 'e' | 'E')) = chars.peek() {
         chars.next(); // consume 'e' or 'E'
 
-        // Optional sign
         if let Some(&(_, '+' | '-')) = chars.peek() {
             chars.next();
         }
@@ -82,7 +126,11 @@ pub fn parse_number(input: &str) -> Option<(JsonValue, &str)> {
         }
 
         if !has_exp_digits {
-            return None;
+            return Err(JsonParseError::new(
+                "Missing digits in exponent",
+                end_index,
+                original,
+            ));
         }
     }
 
@@ -90,7 +138,11 @@ pub fn parse_number(input: &str) -> Option<(JsonValue, &str)> {
 
     if let Some(c) = rest.chars().next() {
         if c.is_ascii_alphabetic() || c == '.' {
-            return None;
+            return Err(JsonParseError::new(
+                "Unexpected trailing character after number",
+                end_index,
+                original,
+            ));
         }
     }
 
@@ -98,4 +150,5 @@ pub fn parse_number(input: &str) -> Option<(JsonValue, &str)> {
         .parse::<f64>()
         .ok()
         .map(|num| (JsonValue::Number(num), rest))
+        .ok_or_else(|| JsonParseError::new("Failed to parse number", end_index, original))
 }

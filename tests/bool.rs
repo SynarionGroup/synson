@@ -2,17 +2,17 @@ use synson::{parse_bool, JsonValue};
 
 #[test]
 fn should_parse_true_and_false() {
-    assert_eq!(parse_bool("true"), Some((JsonValue::Bool(true), "")));
-    assert_eq!(parse_bool("false"), Some((JsonValue::Bool(false), "")));
+    assert_eq!(parse_bool("true"), Ok((JsonValue::Bool(true), "")));
+    assert_eq!(parse_bool("false"), Ok((JsonValue::Bool(false), "")));
     assert_eq!(
         parse_bool("false more"),
-        Some((JsonValue::Bool(false), " more"))
+        Ok((JsonValue::Bool(false), " more"))
     );
 }
 
 #[test]
 fn should_reject_invalid_booleans() {
-    assert_eq!(parse_bool("tru"), None);
-    assert_eq!(parse_bool("truefalse"), None);
-    assert_eq!(parse_bool("falsey"), None);
+    assert!(parse_bool("tru").is_err());
+    assert!(parse_bool("truefalse").is_err());
+    assert!(parse_bool("falsey").is_err());
 }

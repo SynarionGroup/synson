@@ -1,35 +1,42 @@
-use crate::JsonValue;
+use crate::model::{JsonParseError, JsonValue};
 
-/// Attempts to parse the JSON `null` literal.
+/// Parses the JSON `null` literal with strict validation and error tracking.
 ///
 /// # Arguments
 ///
-/// * `input` - A string slice that should start with "null".
+/// * `input` - A string slice that may start with the `null` literal.
 ///
 /// # Returns
 ///
-/// `Some((JsonValue::Null, remaining_input))` if successful, otherwise `None`.
+/// * `Ok((JsonValue::Null, remaining_input))` if correctly parsed.
+/// * `Err(JsonParseError)` if it looks like a `null` but is malformed.
+/// * `Err(JsonParseError::unmatched(...))` if it’s not `null` at all.
 ///
 /// # Examples
 ///
 /// ```
 /// use synson::parser::parse_null;
-/// use synson::JsonValue;
+/// use synson::model::JsonValue;
 ///
-/// assert_eq!(
-///     parse_null("null "),
-///     Some((JsonValue::Null, " "))
-/// );
-/// assert_eq!(parse_null("nul"), None);
+/// assert_eq!(parse_null("null "), Ok((JsonValue::Null, " ")));
+/// assert!(parse_null("nul").is_err());
+/// assert!(parse_null("nulla").is_err());
 /// ```
-pub fn parse_null(input: &str) -> Option<(JsonValue, &str)> {
+pub fn parse_null(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     let input = input.trim_start();
+
     if let Some(rest) = input.strip_prefix("null") {
-        match rest.chars().next() {
-            Some(c) if c.is_ascii_alphanumeric() => None,
-            _ => Some((JsonValue::Null, rest)),
+        if let Some(c) = rest.chars().next() {
+            if c.is_ascii_alphanumeric() {
+                return Err(JsonParseError::new(
+                    "Unexpected character after 'null'",
+                    input.len() - rest.len(),
+                    input,
+                ));
+            }
         }
+        Ok((JsonValue::Null, rest))
     } else {
-        None
+        Err(JsonParseError::unmatched("null", input))
     }
 }

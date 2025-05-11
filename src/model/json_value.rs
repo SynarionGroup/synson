@@ -1,3 +1,5 @@
+// src/model/json_parse_error.rs
+
 /// Represents a JSON value.
 ///
 /// Variants cover all standard JSON types.
