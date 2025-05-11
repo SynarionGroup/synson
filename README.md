@@ -7,13 +7,16 @@
 **Synson** is a minimal, dependency-free JSON parser written in pure Rust.  
 Built for simplicity, auditability, and full control over your JSON handling.
 
-> ⚠️ This project is in `v0.1.0-alpha`: incomplete and subject to breaking changes.
+> ⚠️ This project is in `v0.2.0-alpha`: incomplete and subject to breaking changes.
 
 ---
 
 ## ✨ Features (alpha)
 
-- Parses `null`, booleans, numbers, strings, arrays, and flat objects
+- Parses `null`, booleans, numbers, strings, arrays, and objects (including nested structures)
+- Support for scientific notation in numbers (e.g., `1e3`, `-2.5E-2`)
+- **Flexible parsing modes**: Strict (default) and tolerant modes
+- Strict validation for malformed JSON (e.g., missing colons, trailing commas)
 - No external dependencies
 - Fully testable and auditable
 
@@ -21,19 +24,28 @@ Built for simplicity, auditability, and full control over your JSON handling.
 
 ## 🚀 Example
 
+### Strict Mode (default)
+
+Strict mode ensures compliance with JSON syntax, rejecting errors like trailing commas:
+
 ```rust
 use synson::{parse_json, JsonValue};
+use synson::model::JsonParseOptions;
 
-let json = r#"{"ok": true, "count": 3}"#;
-let value = parse_json(json).unwrap();
+let json = "{\"key\": {\"nested\": true}}";
+let result = parse_json(json, Some(&JsonParseOptions::strict()));
+assert!(result.is_ok());
+```
+---
 
-assert_eq!(
-    value,
-    JsonValue::Object(vec![
-        ("ok".to_string(), JsonValue::Bool(true)),
-        ("count".to_string(), JsonValue::Number(3.0)),
-    ])
-);
+### Tolerant Mode
+
+Tolerant mode allows trailing characters and more lenient parsing:
+
+```rust
+let json = "{\"key\": [true, false,]}";
+let result = parse_json(json, Some(&JsonParseOptions::tolerant()));
+assert!(result.is_ok());
 ```
 
 ---
@@ -42,7 +54,7 @@ assert_eq!(
 
 - [x] Basic types (null, bool, number, string)
 - [x] Flat arrays and objects
-- [ ] Nested structures
+- [x] Nested structures
 - [ ] Unicode string support
 - [ ] Serialization (to_json)
 

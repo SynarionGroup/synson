@@ -1,50 +1,60 @@
-use crate::model::{JsonParseError, JsonValue};
-use crate::parser::{
-    parse_array, parse_bool, parse_null, parse_number, parse_object, parse_string,
-};
+use crate::model::{JsonParseError, JsonParseOptions, JsonValue};
+use crate::parser::parse_value;
 
-/// Entry point for parsing a JSON value from input.
+/// Parses a complete JSON value from a string slice, ensuring full input consumption.
+///
+/// This function is the main entry point for parsing JSON data in Synson. It accepts any valid JSON type,
+/// including `null`, `true`, `false`, numbers, strings, arrays, and objects, and returns either the parsed value
+/// or a detailed `JsonParseError` indicating the failure.
+///
+/// The parser enforces strict compliance with JSON syntax:
+/// - The entire input must be consumed (no trailing characters)
+/// - Invalid constructs (e.g., malformed numbers or unterminated strings) are rejected
+///
+/// The behavior of the parser can be controlled using the `JsonParseOptions` structure.
+/// If no options are provided, the parser defaults to strict mode.
 ///
 /// # Arguments
 ///
-/// * `input` - A full JSON string.
+/// * `input` - A UTF-8 string slice representing the full JSON input. It should be a valid JSON string.
+/// * `options` - An optional reference to a `JsonParseOptions` struct, which defines whether the parser should
+///   operate in strict or tolerant mode. If `None`, the default is strict mode.
 ///
 /// # Returns
 ///
-/// `Ok(JsonValue)` if successfully parsed and all input consumed,
-/// otherwise `Err(JsonParseError)`.
+/// * `Ok(JsonValue)` if the parsing succeeds and all input is consumed.
+/// * `Err(JsonParseError)` if parsing fails or extra content remains after the parsing is completed.
 ///
 /// # Examples
-///
 /// ```
 /// use synson::{parse_json, JsonValue};
+/// use synson::model::JsonParseOptions;
 ///
-/// assert_eq!(
-///     parse_json(" 42 "),
-///     Ok(JsonValue::Number(42.0))
-/// );
+/// // Strict mode, no trailing characters allowed
+/// let result = parse_json("true false", None);  // Default to strict
+/// assert!(result.is_err());
 ///
-/// assert_eq!(
-///     parse_json("true"),
-///     Ok(JsonValue::Bool(true))
-/// );
+/// // Tolerant mode, trailing characters are allowed
+/// let result = parse_json("true false", Some(&JsonParseOptions::tolerant()));
+/// assert!(result.is_ok());
 /// ```
-pub fn parse_json(input: &str) -> Result<JsonValue, JsonParseError> {
-    let input = input.trim_start();
+pub fn parse_json(
+    input: &str,
+    options: Option<&JsonParseOptions>,
+) -> Result<JsonValue, JsonParseError> {
+    let trimmed_input = input.trim_start();
+    let (value, rest) = parse_value(trimmed_input)?;
+    let rest_trimmed = rest.trim_start();
 
-    let (value, rest) = parse_null(input)
-        .or_else(|| parse_bool(input))
-        .or_else(|| parse_number(input))
-        .or_else(|| parse_string(input))
-        .or_else(|| parse_array(input))
-        .or_else(|| parse_object(input))
-        .ok_or_else(|| JsonParseError::new("Unrecognized JSON value", 0))?;
+    let default_options = JsonParseOptions::default();
+    let options = options.unwrap_or(&default_options);
 
-    if !rest.trim_start().is_empty() {
-        let offset = input.len() - rest.trim_start().len();
+    if !rest_trimmed.is_empty() && options.strict {
+        let offset = input.len() - rest_trimmed.len();
         return Err(JsonParseError::new(
             "Trailing characters after JSON value",
             offset,
+            input,
         ));
     }
 

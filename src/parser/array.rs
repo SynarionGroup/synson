@@ -1,8 +1,7 @@
-use crate::model::JsonValue;
-
 use super::parse_value;
+use crate::model::{JsonParseError, JsonValue};
 
-/// Attempts to parse a JSON array of simple values (null, bool, number, string).
+/// Parses a JSON array with potentially nested values and precise error tracking.
 ///
 /// # Arguments
 ///
@@ -10,7 +9,8 @@ use super::parse_value;
 ///
 /// # Returns
 ///
-/// `Some((JsonValue::Array(vec), remaining_input))` if successful, otherwise `None`.
+/// `Ok((JsonValue::Array(vec), remaining_input))` if successful,
+/// otherwise `Err(JsonParseError)` with position info.
 ///
 /// # Examples
 ///
@@ -18,55 +18,66 @@ use super::parse_value;
 /// use synson::{parse_array, JsonValue};
 ///
 /// assert_eq!(
-///     parse_array("[1, true, \"ok\"]"),
-///     Some((
+///     parse_array("[1, {\"a\": [true, false]}, 3]"),
+///     Ok((
 ///         JsonValue::Array(vec![
 ///             JsonValue::Number(1.0),
-///             JsonValue::Bool(true),
-///             JsonValue::String("ok".to_string())
+///             JsonValue::Object({
+///                 let mut map = std::collections::HashMap::new();
+///                 map.insert("a".to_string(), JsonValue::Array(vec![JsonValue::Bool(true), JsonValue::Bool(false)]));
+///                 map
+///             }),
+///             JsonValue::Number(3.0)
 ///         ]),
 ///         ""
 ///     ))
 /// );
-///
-/// assert_eq!(
-///     parse_array("[ ]"),
-///     Some((JsonValue::Array(vec![]), ""))
-/// );
 /// ```
-pub fn parse_array(input: &str) -> Option<(JsonValue, &str)> {
-    let mut input = input.trim_start();
+pub fn parse_array(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
+    let input = input.trim_start();
 
     if !input.starts_with('[') {
-        return None;
+        return Err(JsonParseError::unmatched("array", input));
     }
-    input = &input[1..];
 
+    let mut remaining = &input[1..]; // skip '['
     let mut values = Vec::new();
 
     loop {
-        input = input.trim_start();
+        remaining = remaining.trim_start();
 
-        if let Some(rest) = input.strip_prefix(']') {
-            return Some((JsonValue::Array(values), rest));
+        if let Some(rest) = remaining.strip_prefix(']') {
+            return Ok((JsonValue::Array(values), rest));
         }
 
-        let (value, rest) = parse_value(input)?;
+        // Parse value
+        let (value, rest) =
+            parse_value(remaining).map_err(|e| JsonParseError::new(&e.message, e.index, input))?;
         values.push(value);
-        input = rest.trim_start();
+        remaining = rest.trim_start();
 
-        if let Some(rest) = input.strip_prefix(',') {
-            input = rest;
+        if let Some(rest) = remaining.strip_prefix(',') {
+            remaining = rest;
 
-            if input.trim_start().starts_with(']') {
-                return None;
+            if remaining.trim_start().starts_with(']') {
+                let err_pos = input.len() - remaining.trim_start().len();
+                return Err(JsonParseError::new(
+                    "Trailing comma not allowed before ']'",
+                    err_pos,
+                    input,
+                ));
             }
 
             continue;
-        } else if let Some(rest) = input.strip_prefix(']') {
-            return Some((JsonValue::Array(values), rest));
+        } else if let Some(rest) = remaining.strip_prefix(']') {
+            return Ok((JsonValue::Array(values), rest));
         } else {
-            return None;
+            let err_pos = input.len() - remaining.len();
+            return Err(JsonParseError::new(
+                "Expected ',' or ']' after array element",
+                err_pos,
+                input,
+            ));
         }
     }
 }

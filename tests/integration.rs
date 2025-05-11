@@ -17,17 +17,17 @@ fn build_expected() -> JsonValue {
 #[test]
 fn should_parse_full_valid_jsons() {
     assert_eq!(
-        parse_json("{\"key\": [null, \"ok\", false]}"),
+        parse_json("{\"key\": [null, \"ok\", false]}", None),
         Ok(build_expected())
     );
 
     assert_eq!(
-        parse_json(" { \"key\" : [ null , \"ok\" , false ] } "),
+        parse_json(" { \"key\" : [ null , \"ok\" , false ] } ", None),
         Ok(build_expected())
     );
 
     assert_eq!(
-        parse_json("{\"a\": []}"),
+        parse_json("{\"a\": []}", None),
         Ok(JsonValue::Object({
             let mut map = HashMap::new();
             map.insert("a".to_string(), JsonValue::Array(vec![]));
@@ -36,7 +36,7 @@ fn should_parse_full_valid_jsons() {
     );
 
     assert_eq!(
-        parse_json("{\"a\": {}}"),
+        parse_json("{\"a\": {}}", None),
         Ok(JsonValue::Object({
             let mut map = HashMap::new();
             map.insert("a".to_string(), JsonValue::Object(HashMap::new()));
@@ -47,12 +47,12 @@ fn should_parse_full_valid_jsons() {
 
 #[test]
 fn should_fail_on_invalid_full_jsons() {
-    assert!(parse_json("{\"key\" \"missing colon\"}").is_err());
-    assert!(parse_json("[1, 2,]").is_err());
-    assert!(parse_json("{\"key\": [true,]").is_err());
-    assert!(parse_json("{\"key\": 123").is_err());
-    assert!(parse_json("{\"a\": 1 \"b\": 2}").is_err());
-    assert!(parse_json("{\"a\": true, \"b\"}").is_err());
-    assert!(parse_json("{\"a\" 1}").is_err());
-    assert!(parse_json("{\"a\": [1, null").is_err());
+    assert!(parse_json("{\"key\" \"missing colon\"}", None).is_err());
+    assert!(parse_json("[1, 2,]", None).is_err());
+    assert!(parse_json("{\"key\": [true,]", None).is_err());
+    assert!(parse_json("{\"key\": 123", None).is_err());
+    assert!(parse_json("{\"a\": 1 \"b\": 2}", None).is_err());
+    assert!(parse_json("{\"a\": true, \"b\"}", None).is_err());
+    assert!(parse_json("{\"a\" 1}", None).is_err());
+    assert!(parse_json("{\"a\": [1, null", None).is_err());
 }

@@ -1,0 +1,19 @@
+{
+  "config": {
+    "api": {
+      "url": "https://example.com/api",
+      "timeout": 30,
+      "retry": {
+        "max": 3,
+        "interval": 5
+      }
+    },
+    "settings": {
+      "debug": true,
+      "features": {
+        "logging": true,
+        "caching": false
+      }
+    }
+  }
+}
