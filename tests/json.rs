@@ -3,10 +3,7 @@ use synson::{parse_json, JsonValue};
 
 #[test]
 fn should_parse_valid_json_values() {
-    assert_eq!(
-        parse_json("null", None),
-        Ok(JsonValue::Null)
-    );
+    assert_eq!(parse_json("null", None), Ok(JsonValue::Null));
     assert_eq!(parse_json("true ", None), Ok(JsonValue::Bool(true)));
     assert_eq!(
         parse_json("\"ok\"", None),
