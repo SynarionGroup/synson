@@ -49,8 +49,6 @@ pub fn parse_object(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     let original_input = input;
     let mut input = input.trim_start(); // mutable, pas "let input = ..."
 
-    println!("parse_object input: '{}'", input);
-
     if !input.starts_with('{') {
         return Err(JsonParseError::new(
             "Expected '{' to start object",
@@ -59,12 +57,11 @@ pub fn parse_object(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
         ));
     }
 
-    input = &input[1..]; // skip '{'
+    input = &input[1..];
     let mut map = HashMap::new();
 
     loop {
         input = input.trim_start();
-        println!("parse_object loop input: '{}'", input);
 
         if let Some(rest) = input.strip_prefix('}') {
             return Ok((JsonValue::Object(map), rest));
@@ -76,7 +73,6 @@ pub fn parse_object(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
         let JsonValue::String(key) = key_value else {
             return Err(JsonParseError::new("Object keys must be strings", 0, input));
         };
-        println!("parse_object key: {:?}", key);
 
         input = rest.trim_start();
 
@@ -89,7 +85,7 @@ pub fn parse_object(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
             ));
         }
 
-        input = &input[1..]; // skip ':'
+        input = &input[1..];
         input = input.trim_start();
 
         let (value, rest) = parse_value(input)?;

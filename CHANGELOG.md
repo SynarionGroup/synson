@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.2.0] - 2025-05-11
+
 ### ✨ Added
 
 - Extended test suite for recursive parsing of nested arrays and objects.
@@ -23,6 +25,10 @@
     - Invalid number exponents and leading zeros in numbers.
 - Enhanced error logging to include position information (line, column, index) for better debugging.
 - Custom error handling for malformed JSON objects, arrays, and strings.
+- Trailing characters rejection: The JSON parser now rejects any remaining characters after successfully parsing a JSON value. If there are extra characters, the parser will return a detailed error message indicating the invalid content.
+  - Example errors:
+    - `"truex"`: Invalid because of trailing `x` after the valid `true`.
+    - `"{...} extra"`: Invalid because of the `extra` characters after a valid object.
 
 ### ✅ JSON support
 
@@ -42,6 +48,8 @@
   - Trailing commas in arrays.
   - Unterminated strings.
   - Invalid characters in booleans (`trueX`, `falseY`).
+- Now ensures that after parsing a valid JSON value (null, boolean, number, string, array, or object), no extra characters are left in the input string.
+- The parser will raise an error if there are characters that aren't part of the JSON value, improving strict compliance with JSON formatting.
 
 ### 🧪 Test coverage
 
@@ -59,6 +67,8 @@
     - Missing colons in objects (`{"key" "value"}`).
     - Invalid escape sequences in strings.
 - Fixed test cases for malformed JSON to ensure accurate error handling.
+- Added tests to validate that any extra characters in the input, after a valid JSON value, trigger an error.
+- Regression tests for various cases like `"truex"` and `"{...} extra"` ensuring proper error reporting for trailing characters.
 
 ## [v0.1.0] - 2025-05-08
 
