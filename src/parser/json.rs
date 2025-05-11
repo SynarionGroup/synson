@@ -33,20 +33,13 @@ use crate::parser::parse_value;
 /// ```
 pub fn parse_json(input: &str) -> Result<JsonValue, JsonParseError> {
     let trimmed_input = input.trim_start();
-    println!("parse_json input: '{}'", input); // Log de l'input initial
 
     let (value, rest) = parse_value(trimmed_input)?;
 
     let rest_trimmed = rest.trim_start();
-    println!("parse_json value: {:?}", value); // Log de la valeur analysée
-    println!("parse_json rest: '{}'", rest); // Log de la partie restante
 
     if !rest_trimmed.is_empty() {
-        let offset = trimmed_input.len() - rest_trimmed.len();
-        println!(
-            "parse_json error: Trailing characters found at offset {}",
-            offset
-        );
+        let offset = input.len() - rest_trimmed.len();
         return Err(JsonParseError::new(
             "Trailing characters after JSON value",
             offset,

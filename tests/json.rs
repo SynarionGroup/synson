@@ -25,3 +25,21 @@ fn should_reject_invalid_json_values() {
     assert!(parse_json("42 garbage").is_err());
     assert!(parse_json("}").is_err());
 }
+
+#[test]
+fn should_report_trailing_characters_error() {
+    let err = parse_json("true false").unwrap_err();
+    assert_eq!(err.message, "Trailing characters after JSON value");
+    assert_eq!(err.index, 5);
+    assert_eq!(err.line, 1);
+    assert_eq!(err.column, 6);
+}
+
+#[test]
+fn should_report_trailing_characters_after_object() {
+    let err = parse_json("{\"key\": true} extra").unwrap_err();
+    assert_eq!(err.message, "Trailing characters after JSON value");
+    assert_eq!(err.index, 14);
+    assert_eq!(err.line, 1);
+    assert_eq!(err.column, 15);
+}
