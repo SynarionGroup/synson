@@ -1,0 +1,12 @@
+{
+  "config": {
+    "api": {
+      "url": "https://example.com/api",
+      "timeout": 30,
+      "retry": {
+        "max": 3
+        // Missing interval here
+      }
+    }
+  }
+}
