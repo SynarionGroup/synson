@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use synson::{parse_json, JsonValue};
+use synson::{parse_json, JsonParseOptions, JsonValue};
 
 fn build_expected() -> JsonValue {
     let mut map = HashMap::new();
@@ -55,4 +55,14 @@ fn should_fail_on_invalid_full_jsons() {
     assert!(parse_json("{\"a\": true, \"b\"}", None).is_err());
     assert!(parse_json("{\"a\" 1}", None).is_err());
     assert!(parse_json("{\"a\": [1, null", None).is_err());
+}
+
+#[test]
+fn should_preserve_value_after_roundtrip() {
+    let json = "{\"msg\":\"Hello\",\"val\":[true,42,null]}";
+    let parsed = parse_json(json, Some(&JsonParseOptions::default())).expect("valid json");
+    let serialized = parsed.to_json();
+    let reparsed =
+        parse_json(&serialized, Some(&JsonParseOptions::default())).expect("valid json again");
+    assert_eq!(parsed, reparsed);
 }

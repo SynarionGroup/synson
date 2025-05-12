@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use synson::model::JsonParseOptions;
 use synson::{parse_json, JsonValue};
 
@@ -67,4 +69,46 @@ fn should_report_trailing_characters_after_object_in_strict_mode() {
 fn should_not_report_trailing_characters_in_tolerant_mode() {
     let result = parse_json("true false", Some(&JsonParseOptions::tolerant()));
     assert!(result.is_ok());
+}
+
+#[test]
+fn should_serialize_null() {
+    assert_eq!(JsonValue::Null.to_json(), "null");
+}
+
+#[test]
+fn should_serialize_bool() {
+    assert_eq!(JsonValue::Bool(true).to_json(), "true");
+    assert_eq!(JsonValue::Bool(false).to_json(), "false");
+}
+
+#[test]
+fn should_serialize_number() {
+    assert_eq!(JsonValue::Number(42.0).to_json(), "42");
+    assert_eq!(JsonValue::Number(-42.42).to_json(), "-42.42");
+}
+
+#[test]
+fn should_serialize_string_with_escaping() {
+    let s = JsonValue::String("Hello\n\"World\"\\".to_string());
+    assert_eq!(s.to_json(), "\"Hello\\n\\\"World\\\"\\\\\"");
+}
+
+#[test]
+fn should_serialize_array() {
+    let arr = JsonValue::Array(vec![
+        JsonValue::Bool(true),
+        JsonValue::Number(1.0),
+        JsonValue::String("ok".to_string()),
+    ]);
+    assert_eq!(arr.to_json(), "[true,1,\"ok\"]");
+}
+
+#[test]
+fn should_serialize_object() {
+    let mut map = HashMap::new();
+    map.insert("a".to_string(), JsonValue::Number(1.0));
+    map.insert("b".to_string(), JsonValue::Bool(false));
+    let obj = JsonValue::Object(map);
+    assert_eq!(obj.to_json(), "{\"a\":1,\"b\":false}");
 }
