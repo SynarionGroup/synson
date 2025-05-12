@@ -1,4 +1,4 @@
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)](https://github.com/SynarionGroup/synson)
+[![Version](https://img.shields.io/badge/version-0.2.0--alpha-blue)](https://github.com/SynarionGroup/synson)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/SynarionGroup/synson/actions/workflows/ci.yml/badge.svg)](https://github.com/SynarionGroup/synson/actions)
 
