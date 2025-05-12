@@ -54,3 +54,36 @@ fn should_reject_invalid_strings() {
     assert!(parse_string("\"unclosed").is_err());
     assert!(parse_string("\"bad\\escape\"").is_err());
 }
+
+#[test]
+fn should_parse_unicode_escaped_strings() {
+    assert_eq!(
+        parse_string("\"unicode smile: \\u263A\""),
+        Ok((JsonValue::String("unicode smile: ☺".to_string()), "")),
+    );
+
+    assert_eq!(
+        parse_string("\"greek letter: \\u03A9\""),
+        Ok((JsonValue::String("greek letter: Ω".to_string()), "")),
+    );
+}
+
+#[test]
+fn should_parse_unicode_surrogate_pairs() {
+    assert_eq!(
+        parse_string("\"emoji: \\uD83D\\uDE00\""),
+        Ok((JsonValue::String("emoji: 😀".to_string()), "")),
+    );
+
+    assert_eq!(
+        parse_string("\"another emoji: \\uD83D\\uDE80\""),
+        Ok((JsonValue::String("another emoji: 🚀".to_string()), "")),
+    );
+}
+
+#[test]
+fn should_reject_invalid_unicode_escapes() {
+    assert!(parse_string("\"bad unicode: \\uZZZZ\"").is_err());
+    assert!(parse_string("\"orphan surrogate: \\uD83D\"").is_err());
+    assert!(parse_string("\"lonely low surrogate: \\uDE00\"").is_err());
+}
