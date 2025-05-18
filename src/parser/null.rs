@@ -1,4 +1,4 @@
-use crate::model::{JsonParseError, JsonValue};
+use crate::model::{ErrorKind, JsonParseError, JsonValue};
 
 /// Parses the JSON `null` literal with strict validation and error tracking.
 ///
@@ -9,8 +9,8 @@ use crate::model::{JsonParseError, JsonValue};
 /// # Returns
 ///
 /// * `Ok((JsonValue::Null, remaining_input))` if correctly parsed.
-/// * `Err(JsonParseError)` if it looks like a `null` but is malformed.
-/// * `Err(JsonParseError::unmatched(...))` if it’s not `null` at all.
+/// * `Err(JsonParseError)` if the token is malformed (e.g. `nulla`, `null123`).
+/// * `Err(JsonParseError::unmatched(...))` if the input doesn't start with `null`.
 ///
 /// # Examples
 ///
@@ -28,10 +28,11 @@ pub fn parse_null(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     if let Some(rest) = input.strip_prefix("null") {
         if let Some(c) = rest.chars().next() {
             if c.is_ascii_alphanumeric() {
+                let pos = input.len() - rest.len();
                 return Err(JsonParseError::new(
-                    "Unexpected character after 'null'",
-                    input.len() - rest.len(),
                     input,
+                    pos,
+                    ErrorKind::UnexpectedChar(c),
                 ));
             }
         }

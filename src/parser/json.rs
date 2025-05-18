@@ -1,4 +1,4 @@
-use crate::model::{JsonParseError, JsonParseOptions, JsonValue};
+use crate::model::{ErrorKind, JsonParseError, JsonParseOptions, JsonValue};
 use crate::parser::parse_value;
 
 /// Parses a complete JSON value from a string slice, ensuring full input consumption.
@@ -26,6 +26,7 @@ use crate::parser::parse_value;
 /// * `Err(JsonParseError)` if parsing fails or extra content remains after the parsing is completed.
 ///
 /// # Examples
+///
 /// ```
 /// use synson::{parse_json, JsonValue};
 /// use synson::model::JsonParseOptions;
@@ -44,17 +45,17 @@ pub fn parse_json(
 ) -> Result<JsonValue, JsonParseError> {
     let trimmed_input = input.trim_start();
     let (value, rest) = parse_value(trimmed_input)?;
-    let rest_trimmed = rest.trim_start();
 
+    let rest_trimmed = rest.trim_start();
     let default_options = JsonParseOptions::default();
     let options = options.unwrap_or(&default_options);
 
     if !rest_trimmed.is_empty() && options.strict {
         let offset = input.len() - rest_trimmed.len();
         return Err(JsonParseError::new(
-            "Trailing characters after JSON value",
-            offset,
             input,
+            offset,
+            ErrorKind::Custom("Trailing characters after JSON value".into()),
         ));
     }
 

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use synson::model::JsonParseOptions;
+use synson::model::{ErrorKind, JsonParseOptions};
 use synson::{parse_json, JsonValue};
 
 #[test]
@@ -32,7 +32,10 @@ fn should_reject_invalid_json_values() {
 #[test]
 fn should_report_trailing_characters_error() {
     let err = parse_json("true false", None).unwrap_err();
-    assert_eq!(err.message, "Trailing characters after JSON value");
+    assert!(matches!(
+        err.kind,
+        ErrorKind::Custom(ref msg) if msg.contains("Trailing characters")
+    ));
     assert_eq!(err.index, 5);
     assert_eq!(err.line, 1);
     assert_eq!(err.column, 6);
@@ -41,7 +44,10 @@ fn should_report_trailing_characters_error() {
 #[test]
 fn should_report_trailing_characters_after_object() {
     let err = parse_json("{\"key\": true} extra", None).unwrap_err();
-    assert_eq!(err.message, "Trailing characters after JSON value");
+    assert!(matches!(
+        err.kind,
+        ErrorKind::Custom(ref msg) if msg.contains("Trailing characters")
+    ));
     assert_eq!(err.index, 14);
     assert_eq!(err.line, 1);
     assert_eq!(err.column, 15);
@@ -50,7 +56,10 @@ fn should_report_trailing_characters_after_object() {
 #[test]
 fn should_report_trailing_characters_error_in_strict_mode() {
     let err = parse_json("true false", Some(&JsonParseOptions::strict())).unwrap_err();
-    assert_eq!(err.message, "Trailing characters after JSON value");
+    assert!(matches!(
+        err.kind,
+        ErrorKind::Custom(ref msg) if msg.contains("Trailing characters")
+    ));
     assert_eq!(err.index, 5);
     assert_eq!(err.line, 1);
     assert_eq!(err.column, 6);
@@ -59,7 +68,10 @@ fn should_report_trailing_characters_error_in_strict_mode() {
 #[test]
 fn should_report_trailing_characters_after_object_in_strict_mode() {
     let err = parse_json("{\"key\": true} extra", Some(&JsonParseOptions::strict())).unwrap_err();
-    assert_eq!(err.message, "Trailing characters after JSON value");
+    assert!(matches!(
+        err.kind,
+        ErrorKind::Custom(ref msg) if msg.contains("Trailing characters")
+    ));
     assert_eq!(err.index, 14);
     assert_eq!(err.line, 1);
     assert_eq!(err.column, 15);

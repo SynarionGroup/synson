@@ -1,4 +1,4 @@
-use crate::model::{JsonParseError, JsonValue};
+use crate::model::{ErrorKind, JsonParseError, JsonValue};
 
 /// Parses a JSON string literal with escape support (`\\`, `\"`, `\n`, `\t`, `\/`, `\b`, `\f`, `\r`, `\uXXXX`).
 ///
@@ -13,19 +13,31 @@ use crate::model::{JsonParseError, JsonValue};
 /// * `Ok((JsonValue::String(value), remaining_input))` if a valid JSON string is parsed.
 /// * `Err(JsonParseError)` if the string is malformed or escape sequences are invalid.
 ///
+/// # Examples
+///
+/// ```
+/// use synson::parser::parse_string;
+/// use synson::model::JsonValue;
+///
+/// assert_eq!(
+///     parse_string("\"hello\""),
+///     Ok((JsonValue::String("hello".to_string()), ""))
+/// );
+/// assert!(parse_string("\"unterminated").is_err());
+/// ```
 pub fn parse_string(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     let input = input.trim_start();
     let mut chars = input.char_indices();
 
     let (_, first) = chars
         .next()
-        .ok_or_else(|| JsonParseError::new("Expected '\"' to start string", 0, input))?;
+        .ok_or_else(|| JsonParseError::new(input, 0, ErrorKind::UnexpectedEof))?;
 
     if first != '"' {
         return Err(JsonParseError::new(
-            "Expected '\"' to start string",
-            0,
             input,
+            0,
+            ErrorKind::UnexpectedChar(first),
         ));
     }
 
@@ -49,37 +61,26 @@ pub fn parse_string(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
                 't' => result.push('\t'),
                 'u' => {
                     if i + 5 >= input.len() {
-                        return Err(JsonParseError::new(
-                            "Incomplete Unicode escape sequence",
-                            i,
-                            input,
-                        ));
+                        return Err(JsonParseError::new(input, i, ErrorKind::InvalidUnicode));
                     }
                     let hex = &input[i + 1..i + 5];
                     let codepoint = u16::from_str_radix(hex, 16)
-                        .map_err(|_| JsonParseError::new("Invalid Unicode escape", i, input))?;
+                        .map_err(|_| JsonParseError::new(input, i, ErrorKind::InvalidUnicode))?;
 
                     i += 4;
 
                     if (0xD800..=0xDBFF).contains(&codepoint) {
-                        if i + 2 >= input.len() || &input[i + 1..i + 3] != "\\u" {
-                            return Err(JsonParseError::new(
-                                "Expected low surrogate after high surrogate",
-                                i,
-                                input,
-                            ));
+                        if i + 6 >= input.len() || &input[i + 1..i + 3] != "\\u" {
+                            return Err(JsonParseError::new(input, i, ErrorKind::InvalidUnicode));
                         }
 
                         let low_hex = &input[i + 3..i + 7];
-                        let low_codepoint = u16::from_str_radix(low_hex, 16)
-                            .map_err(|_| JsonParseError::new("Invalid low surrogate", i, input))?;
+                        let low_codepoint = u16::from_str_radix(low_hex, 16).map_err(|_| {
+                            JsonParseError::new(input, i, ErrorKind::InvalidUnicode)
+                        })?;
 
                         if !(0xDC00..=0xDFFF).contains(&low_codepoint) {
-                            return Err(JsonParseError::new(
-                                "Invalid low surrogate value",
-                                i,
-                                input,
-                            ));
+                            return Err(JsonParseError::new(input, i, ErrorKind::InvalidUnicode));
                         }
 
                         let high_ten = (codepoint - 0xD800) as u32;
@@ -87,24 +88,20 @@ pub fn parse_string(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
                         let scalar = 0x10000 + ((high_ten << 10) | low_ten);
 
                         let ch = char::from_u32(scalar).ok_or_else(|| {
-                            JsonParseError::new("Invalid Unicode scalar value", i, input)
+                            JsonParseError::new(input, i, ErrorKind::InvalidUnicode)
                         })?;
 
                         result.push(ch);
                         i += 6;
                     } else {
                         let ch = char::from_u32(codepoint as u32).ok_or_else(|| {
-                            JsonParseError::new("Invalid Unicode codepoint", i, input)
+                            JsonParseError::new(input, i, ErrorKind::InvalidUnicode)
                         })?;
                         result.push(ch);
                     }
                 }
                 _ => {
-                    return Err(JsonParseError::new(
-                        "Invalid escape sequence in string",
-                        i,
-                        input,
-                    ));
+                    return Err(JsonParseError::new(input, i, ErrorKind::InvalidEscape));
                 }
             }
             escape = false;
@@ -121,8 +118,8 @@ pub fn parse_string(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     }
 
     Err(JsonParseError::new(
-        "Unterminated string literal",
-        input.len(),
         input,
+        input.len(),
+        ErrorKind::UnterminatedString,
     ))
 }
