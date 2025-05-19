@@ -1,4 +1,4 @@
-use crate::model::{JsonParseError, JsonValue};
+use crate::model::{ErrorKind, JsonParseError, JsonValue};
 
 /// Parses a JSON boolean literal (`true` or `false`) with strict syntax validation.
 ///
@@ -7,7 +7,7 @@ use crate::model::{JsonParseError, JsonValue};
 ///
 /// # Arguments
 ///
-/// * `input` - A string slice expected to start with a JSON boolean.
+/// * `input` - A string slice expected to start with a JSON boolean literal.
 ///
 /// # Returns
 ///
@@ -32,10 +32,11 @@ pub fn parse_bool(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     if let Some(rest) = input.strip_prefix("true") {
         if let Some(c) = rest.chars().next() {
             if c.is_ascii_alphanumeric() {
+                let pos = input.len() - rest.len();
                 return Err(JsonParseError::new(
-                    "Invalid token after 'true'",
-                    input.len() - rest.len(),
                     input,
+                    pos,
+                    ErrorKind::UnexpectedChar(c),
                 ));
             }
         }
@@ -45,10 +46,11 @@ pub fn parse_bool(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     if let Some(rest) = input.strip_prefix("false") {
         if let Some(c) = rest.chars().next() {
             if c.is_ascii_alphanumeric() {
+                let pos = input.len() - rest.len();
                 return Err(JsonParseError::new(
-                    "Invalid token after 'false'",
-                    input.len() - rest.len(),
                     input,
+                    pos,
+                    ErrorKind::UnexpectedChar(c),
                 ));
             }
         }

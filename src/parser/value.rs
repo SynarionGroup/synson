@@ -1,5 +1,5 @@
 use super::{parse_array, parse_bool, parse_null, parse_number, parse_object, parse_string};
-use crate::model::{JsonParseError, JsonValue};
+use crate::model::{ErrorKind, JsonParseError, JsonValue};
 
 /// Parses any valid JSON value, including primitives and nested arrays/objects.
 ///
@@ -30,21 +30,29 @@ pub fn parse_value(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
 
     for parser in [
         parse_object,
-        parse_null,
-        parse_bool,
-        parse_number,
-        parse_string,
         parse_array,
+        parse_string,
+        parse_number,
+        parse_bool,
+        parse_null,
     ] {
         match parser(input) {
             Ok(ok) => return Ok(ok),
-            Err(e) if e.message.starts_with("Expected") => {
-                if first_expected_err.is_none() {
-                    first_expected_err = Some(e);
+            Err(e) => match &e.kind {
+                ErrorKind::Custom(msg) if msg.starts_with("Expected") => {
+                    if first_expected_err.is_none() {
+                        first_expected_err = Some(e);
+                    }
+                    continue;
                 }
-                continue;
-            }
-            Err(e) => return Err(e),
+                ErrorKind::UnexpectedChar(_) => {
+                    if first_expected_err.is_none() {
+                        first_expected_err = Some(e);
+                    }
+                    continue;
+                }
+                _ => return Err(e),
+            },
         }
     }
 

@@ -1,5 +1,5 @@
 use super::parse_value;
-use crate::model::{JsonParseError, JsonValue};
+use crate::model::{ErrorKind, JsonParseError, JsonValue};
 
 /// Parses a JSON array with potentially nested values and precise error tracking.
 ///
@@ -9,8 +9,8 @@ use crate::model::{JsonParseError, JsonValue};
 ///
 /// # Returns
 ///
-/// `Ok((JsonValue::Array(vec), remaining_input))` if successful,
-/// otherwise `Err(JsonParseError)` with position info.
+/// * `Ok((JsonValue::Array(values), remaining_input))` if successfully parsed.
+/// * `Err(JsonParseError)` if the input is malformed (e.g. missing commas, bad values).
 ///
 /// # Examples
 ///
@@ -46,25 +46,28 @@ pub fn parse_array(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     loop {
         remaining = remaining.trim_start();
 
+        // Empty array or finished
         if let Some(rest) = remaining.strip_prefix(']') {
             return Ok((JsonValue::Array(values), rest));
         }
 
-        // Parse value
-        let (value, rest) =
-            parse_value(remaining).map_err(|e| JsonParseError::new(&e.message, e.index, input))?;
+        // Try to parse a value
+        let (value, rest) = parse_value(remaining)
+            .map_err(|e| JsonParseError::new(input, e.index, ErrorKind::ExpectedValue))?;
+
         values.push(value);
         remaining = rest.trim_start();
 
         if let Some(rest) = remaining.strip_prefix(',') {
             remaining = rest;
 
+            // Trailing comma is forbidden
             if remaining.trim_start().starts_with(']') {
                 let err_pos = input.len() - remaining.trim_start().len();
                 return Err(JsonParseError::new(
-                    "Trailing comma not allowed before ']'",
-                    err_pos,
                     input,
+                    err_pos,
+                    ErrorKind::TrailingComma,
                 ));
             }
 
@@ -74,9 +77,9 @@ pub fn parse_array(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
         } else {
             let err_pos = input.len() - remaining.len();
             return Err(JsonParseError::new(
-                "Expected ',' or ']' after array element",
-                err_pos,
                 input,
+                err_pos,
+                ErrorKind::ExpectedComma,
             ));
         }
     }

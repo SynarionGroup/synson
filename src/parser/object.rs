@@ -1,5 +1,4 @@
-use crate::model::{JsonParseError, JsonValue};
-use crate::parser::parse_string;
+use crate::model::{ErrorKind, JsonParseError, JsonValue};
 
 use std::collections::HashMap;
 
@@ -47,13 +46,13 @@ use super::parse_value;
 /// ```
 pub fn parse_object(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
     let original_input = input;
-    let mut input = input.trim_start(); // mutable, pas "let input = ..."
+    let mut input = input.trim_start();
 
     if !input.starts_with('{') {
         return Err(JsonParseError::new(
-            "Expected '{' to start object",
-            0,
             input,
+            0,
+            ErrorKind::UnexpectedChar(input.chars().next().unwrap_or('?')),
         ));
     }
 
@@ -67,51 +66,61 @@ pub fn parse_object(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
             return Ok((JsonValue::Object(map), rest));
         }
 
-        let (key_value, rest) = parse_string(input)
-            .map_err(|e| JsonParseError::new("Expected string key in object", e.index, input))?;
+        // Try full JSON value (to catch non-string keys like numbers)
+        let (key_val, rest) = parse_value(input)?;
 
-        let JsonValue::String(key) = key_value else {
-            return Err(JsonParseError::new("Object keys must be strings", 0, input));
-        };
+        match key_val {
+            JsonValue::String(key) => {
+                input = rest.trim_start();
 
-        input = rest.trim_start();
+                if !input.starts_with(':') {
+                    let offset = original_input.len() - input.len();
+                    return Err(JsonParseError::new(
+                        original_input,
+                        offset,
+                        ErrorKind::ExpectedColon,
+                    ));
+                }
 
-        if !input.starts_with(':') {
-            let offset = original_input.len() - input.len();
-            return Err(JsonParseError::new(
-                "Expected ':' after key in object",
-                offset,
-                original_input,
-            ));
-        }
+                input = &input[1..];
+                input = input.trim_start();
 
-        input = &input[1..];
-        input = input.trim_start();
+                let (value, rest) = parse_value(input)?;
+                map.insert(key, value);
+                input = rest.trim_start();
 
-        let (value, rest) = parse_value(input)?;
-        map.insert(key, value);
-        input = rest.trim_start();
+                if let Some(rest) = input.strip_prefix(',') {
+                    input = rest;
 
-        if let Some(rest) = input.strip_prefix(',') {
-            input = rest;
+                    if input.trim_start().starts_with('}') {
+                        let pos = original_input.len() - input.trim_start().len();
+                        return Err(JsonParseError::new(
+                            original_input,
+                            pos,
+                            ErrorKind::TrailingComma,
+                        ));
+                    }
 
-            if input.trim_start().starts_with('}') {
+                    continue;
+                } else if let Some(rest) = input.strip_prefix('}') {
+                    return Ok((JsonValue::Object(map), rest));
+                } else {
+                    let pos = original_input.len() - input.len();
+                    return Err(JsonParseError::new(
+                        original_input,
+                        pos,
+                        ErrorKind::ExpectedComma,
+                    ));
+                }
+            }
+            _ => {
+                let offset = original_input.len() - input.len();
                 return Err(JsonParseError::new(
-                    "Trailing comma not allowed before '}'",
-                    input.len() - input.trim_start().len(),
-                    input,
+                    original_input,
+                    offset,
+                    ErrorKind::InvalidObjectKey,
                 ));
             }
-
-            continue;
-        } else if let Some(rest) = input.strip_prefix('}') {
-            return Ok((JsonValue::Object(map), rest));
-        } else {
-            return Err(JsonParseError::new(
-                "Expected ',' or '}' after object entry",
-                input.len(),
-                input,
-            ));
         }
     }
 }
