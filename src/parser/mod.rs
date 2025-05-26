@@ -1,6 +1,7 @@
 pub mod array;
 pub mod bool;
 pub mod json;
+pub mod key_value;
 pub mod null;
 pub mod number;
 pub mod object;
@@ -10,6 +11,7 @@ pub mod value;
 pub use array::parse_array;
 pub use bool::parse_bool;
 pub use json::parse_json;
+pub use key_value::parse_key_value_pair;
 pub use null::parse_null;
 pub use number::parse_number;
 pub use object::parse_object;
