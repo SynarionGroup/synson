@@ -91,3 +91,9 @@ fn should_reject_decimal_with_no_digits() {
     let err = parse_json("1.", None).unwrap_err();
     assert!(matches!(err.kind, ErrorKind::DecimalWithoutDigits));
 }
+
+#[test]
+fn should_reject_duplicate_object_keys() {
+    let err = parse_json("{\"a\": 1, \"a\": 2}", None).unwrap_err();
+    assert!(matches!(err.kind, ErrorKind::DuplicateKey(ref key) if key == "a"));
+}

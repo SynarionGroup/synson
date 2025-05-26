@@ -67,6 +67,9 @@ pub enum ErrorKind {
     /// An invalid object key was encountered (e.g., a number instead of a string).
     InvalidObjectKey,
 
+    /// An object contains a duplicate key (e.g., `"a":1, "a":2`).
+    DuplicateKey(String),
+
     /// A trailing comma was found before a closing brace or bracket (e.g., `[1,]`).
     TrailingComma,
 

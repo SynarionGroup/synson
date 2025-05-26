@@ -26,6 +26,9 @@ fn should_reject_invalid_objects() {
     assert!(parse_object("{\"a\": 1,}").is_err());
     assert!(parse_object("{\"a\": 1 \"b\": 2}").is_err());
     assert!(parse_object("not an object").is_err());
+    assert!(parse_object("{1: \"value\"}").is_err());
+    assert!(parse_object("{\"a\": ???}").is_err());
+    assert!(parse_object("{\"a\": 1,, \"b\": 2}").is_err());
 }
 
 #[test]
@@ -67,4 +70,22 @@ fn should_parse_deeply_nested_objects() {
         parse_object(r#"{"a": {"b": {"c": {"d": null}}}}"#),
         Ok((JsonValue::Object(a), ""))
     );
+}
+
+#[test]
+fn should_parse_with_spaces_and_roundtrip() {
+    let mut expected = HashMap::new();
+    expected.insert("x".to_string(), JsonValue::Number(1.0));
+    expected.insert("y".to_string(), JsonValue::Bool(true));
+
+    assert_eq!(
+        parse_object("{  \"x\" : 1 , \"y\" : true  }"),
+        Ok((JsonValue::Object(expected), ""))
+    );
+}
+
+#[test]
+fn should_fail_on_duplicate_keys() {
+    let result = parse_object("{\"a\": 1, \"a\": 2}");
+    assert!(result.is_err());
 }

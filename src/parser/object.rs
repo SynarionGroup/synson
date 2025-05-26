@@ -10,6 +10,7 @@ use super::parse_value;
 /// - Keys must be quoted strings
 /// - A colon must follow each key
 /// - Commas separate key-value pairs
+/// - Duplicate keys are rejected
 /// - Trailing commas are rejected
 ///
 /// # Arguments
@@ -66,61 +67,68 @@ pub fn parse_object(input: &str) -> Result<(JsonValue, &str), JsonParseError> {
             return Ok((JsonValue::Object(map), rest));
         }
 
-        // Try full JSON value (to catch non-string keys like numbers)
+        // Try full JSON value to detect non-string keys
         let (key_val, rest) = parse_value(input)?;
 
-        match key_val {
-            JsonValue::String(key) => {
-                input = rest.trim_start();
+        let JsonValue::String(key) = key_val else {
+            let offset = original_input.len() - input.len();
+            return Err(JsonParseError::new(
+                original_input,
+                offset,
+                ErrorKind::InvalidObjectKey,
+            ));
+        };
 
-                if !input.starts_with(':') {
-                    let offset = original_input.len() - input.len();
-                    return Err(JsonParseError::new(
-                        original_input,
-                        offset,
-                        ErrorKind::ExpectedColon,
-                    ));
-                }
+        input = rest.trim_start();
 
-                input = &input[1..];
-                input = input.trim_start();
+        if !input.starts_with(':') {
+            let offset = original_input.len() - input.len();
+            return Err(JsonParseError::new(
+                original_input,
+                offset,
+                ErrorKind::ExpectedColon,
+            ));
+        }
 
-                let (value, rest) = parse_value(input)?;
-                map.insert(key, value);
-                input = rest.trim_start();
+        input = &input[1..];
+        input = input.trim_start();
 
-                if let Some(rest) = input.strip_prefix(',') {
-                    input = rest;
+        let (value, rest) = parse_value(input)?;
 
-                    if input.trim_start().starts_with('}') {
-                        let pos = original_input.len() - input.trim_start().len();
-                        return Err(JsonParseError::new(
-                            original_input,
-                            pos,
-                            ErrorKind::TrailingComma,
-                        ));
-                    }
+        if map.contains_key(&key) {
+            let pos = original_input.len() - input.len();
+            return Err(JsonParseError::new(
+                original_input,
+                pos,
+                ErrorKind::DuplicateKey(key),
+            ));
+        }
 
-                    continue;
-                } else if let Some(rest) = input.strip_prefix('}') {
-                    return Ok((JsonValue::Object(map), rest));
-                } else {
-                    let pos = original_input.len() - input.len();
-                    return Err(JsonParseError::new(
-                        original_input,
-                        pos,
-                        ErrorKind::ExpectedComma,
-                    ));
-                }
-            }
-            _ => {
-                let offset = original_input.len() - input.len();
+        map.insert(key, value);
+        input = rest.trim_start();
+
+        if let Some(rest) = input.strip_prefix(',') {
+            input = rest;
+
+            if input.trim_start().starts_with('}') {
+                let pos = original_input.len() - input.trim_start().len();
                 return Err(JsonParseError::new(
                     original_input,
-                    offset,
-                    ErrorKind::InvalidObjectKey,
+                    pos,
+                    ErrorKind::TrailingComma,
                 ));
             }
+
+            continue;
+        } else if let Some(rest) = input.strip_prefix('}') {
+            return Ok((JsonValue::Object(map), rest));
+        } else {
+            let pos = original_input.len() - input.len();
+            return Err(JsonParseError::new(
+                original_input,
+                pos,
+                ErrorKind::ExpectedComma,
+            ));
         }
     }
 }
